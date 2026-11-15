@@ -1,0 +1,17 @@
+{
+    email admin@example.com
+}
+
+:80 {
+    encode gzip
+
+    # Reverse proxy backend API
+    handle /api/* {
+        reverse_proxy backend:8080
+    }
+
+    # Fallback status response
+    handle {
+        respond "Personal Expense & Budget Tracker API Gateway" 200
+    }
+}
