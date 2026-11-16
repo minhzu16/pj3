@@ -44,67 +44,55 @@ public class SplitTransactionService {
      */
     @Transactional
     public SplitTransactionResponse createSplitTransaction(UUID userId, CreateSplitTransactionRequest request) {
+        // Guard clauses: fast boundary checks
         if (request.getSplits() == null || request.getSplits().size() < 2) {
             throw new BadRequestException("Split transaction must contain at least 2 split items");
         }
-
         if (request.getTotalAmount() == null || request.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("Total amount must be greater than zero");
         }
 
-        // Validate individual split amounts and calculate the total sum
-        BigDecimal sumSplits = BigDecimal.ZERO;
-        for (SplitItemRequest split : request.getSplits()) {
-            if (split.getAmount() == null || split.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new BadRequestException("Split amount must be greater than zero");
-            }
-            sumSplits = sumSplits.add(split.getAmount());
-        }
+        // Validate individual split amounts and calculate total via stream reduce
+        BigDecimal sumSplits = request.getSplits().stream()
+                .map(split -> {
+                    if (split.getAmount() == null || split.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                        throw new BadRequestException("Split amount must be greater than zero");
+                    }
+                    return split.getAmount();
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Strict Sum Invariant Check: sum(splits) == totalAmount
         if (sumSplits.compareTo(request.getTotalAmount()) != 0) {
-            log.warn("Split transaction sum invariant violation for user {}: splits total={}, expected total={}",
+            log.warn("Split sum violation for user {}: splits total={}, expected total={}",
                     userId, sumSplits, request.getTotalAmount());
             throw new BadRequestException("Split amounts total (" + sumSplits + ") does not equal total transaction amount (" + request.getTotalAmount() + ")");
         }
 
         // Validate payment method ownership if specified
-        PaymentMethodResponse paymentMethodResponse = null;
-        if (request.getPaymentMethodId() != null) {
-            PaymentMethod pm = paymentMethodRepository.findByIdAndUserId(request.getPaymentMethodId(), userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Payment method not found"));
-            paymentMethodResponse = PaymentMethodResponse.fromEntity(pm);
-        }
+        PaymentMethodResponse paymentMethodResponse = request.getPaymentMethodId() == null ? null :
+                paymentMethodRepository.findByIdAndUserId(request.getPaymentMethodId(), userId)
+                        .map(PaymentMethodResponse::fromEntity)
+                        .orElseThrow(() -> new ResourceNotFoundException("Payment method not found"));
 
-        // Validate each category's existence and ownership by user
+        // Validate categories upfront (fail-fast)
         for (SplitItemRequest split : request.getSplits()) {
             Category category = categoryRepository.findByIdAndUserId(split.getCategoryId(), userId)
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
-
             if (category.getType() != request.getType()) {
                 throw new BadRequestException("Category type (" + category.getType().getValue()
                         + ") does not match transaction type (" + request.getType().getValue() + ")");
             }
         }
 
-        // Execute split transaction persistence
+        // Persist split transactions
         UUID splitGroupId = UUID.randomUUID();
-        List<TransactionWithAlertsResponse> splitResponses = new ArrayList<>();
         int totalItems = request.getSplits().size();
+        List<TransactionWithAlertsResponse> splitResponses = new ArrayList<>(totalItems);
 
         for (int i = 0; i < totalItems; i++) {
             SplitItemRequest split = request.getSplits().get(i);
-            String itemNote = split.getNote();
-            String prefix = "[Split " + (i + 1) + "/" + totalItems + "]";
-
-            String finalNote;
-            if (itemNote != null && !itemNote.isBlank()) {
-                finalNote = prefix + " " + itemNote + (request.getNote() != null ? " (" + request.getNote() + ")" : "");
-            } else if (request.getNote() != null && !request.getNote().isBlank()) {
-                finalNote = prefix + " " + request.getNote();
-            } else {
-                finalNote = prefix;
-            }
+            String note = buildSplitNote(split.getNote(), request.getNote(), i + 1, totalItems);
 
             CreateTransactionRequest singleTxnReq = CreateTransactionRequest.builder()
                     .type(request.getType())
@@ -112,11 +100,10 @@ public class SplitTransactionService {
                     .txnDate(request.getTxnDate())
                     .categoryId(split.getCategoryId())
                     .paymentMethodId(request.getPaymentMethodId())
-                    .note(finalNote)
+                    .note(note)
                     .build();
 
-            TransactionWithAlertsResponse resp = transactionService.createTransaction(userId, singleTxnReq);
-            splitResponses.add(resp);
+            splitResponses.add(transactionService.createTransaction(userId, singleTxnReq));
         }
 
         log.info("Successfully created split transaction group {} with {} items for user {}",
@@ -129,9 +116,19 @@ public class SplitTransactionService {
                 .txnDate(request.getTxnDate())
                 .paymentMethod(paymentMethodResponse)
                 .mainNote(request.getNote())
-                .splitCount(splitResponses.size())
+                .splitCount(totalItems)
                 .splitTransactions(splitResponses)
                 .createdAt(Instant.now())
                 .build();
+    }
+
+    private static String buildSplitNote(String itemNote, String mainNote, int index, int total) {
+        String prefix = "[Split " + index + "/" + total + "]";
+        if (itemNote != null && !itemNote.isBlank()) {
+            return (mainNote != null && !mainNote.isBlank())
+                    ? prefix + " " + itemNote + " (" + mainNote + ")"
+                    : prefix + " " + itemNote;
+        }
+        return (mainNote != null && !mainNote.isBlank()) ? prefix + " " + mainNote : prefix;
     }
 }
