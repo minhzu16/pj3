@@ -112,12 +112,17 @@ cp .env.example backend/.env   # rồi điền JWT_SECRET
 cd backend
 rtk mvn spring-boot:run
 ```
-Flyway sẽ tự động thực thi các file migration `V1__init_schema.sql` và `V2__seed_demo_data.sql`.
+Flyway sẽ tự động thực thi `db/migration/V1__init_schema.sql`. Dữ liệu demo `db/demo/V2__seed_demo_data.sql` **chỉ được chạy khi `DEMO_MODE=true`** (đã bật sẵn trong `.env.example` cho môi trường dev; mặc định là tắt).
 Backend sẽ hoạt động tại địa chỉ: `http://localhost:8080/api/v1`.
 
-Tài khoản kiểm thử dựng sẵn:
+Tài khoản kiểm thử dựng sẵn (chỉ có ở demo mode):
 - **Email:** `demo@example.com`
 - **Mật khẩu:** `Password123!`
+
+> **Database đã deploy trước thay đổi này** vẫn còn 2 tài khoản demo với mật khẩu công khai. Backend vẫn khởi động bình thường; hãy xoá chúng (dữ liệu liên quan bị xoá theo nhờ `ON DELETE CASCADE`):
+> ```sql
+> DELETE FROM users WHERE email IN ('demo@example.com', 'test@example.com');
+> ```
 
 ### 4.3. Khởi động Frontend (Flutter Client)
 Chuyển vào thư mục `frontend`:
