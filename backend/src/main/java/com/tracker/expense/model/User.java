@@ -12,6 +12,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -29,7 +31,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, columnDefinition = "citext") // case-insensitive, see V1
     private String email;
 
     @Column(name = "password_hash", nullable = false)
@@ -39,6 +41,7 @@ public class User {
     private String fullName;
 
     @Column(nullable = false, length = 3)
+    @JdbcTypeCode(SqlTypes.CHAR) // V1 declares currency CHAR(3)
     @Builder.Default
     private String currency = "VND";
 
