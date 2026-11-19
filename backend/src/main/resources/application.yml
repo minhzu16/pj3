@@ -6,6 +6,9 @@ server:
 spring:
   application:
     name: expense-tracker-backend
+  # Local development: put JWT_SECRET (and any overrides) in backend/.env
+  config:
+    import: optional:file:.env[.properties]
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/expense_tracker}
@@ -42,7 +45,7 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+    secret: ${JWT_SECRET}   # required, 32+ bytes: no default on purpose
     access-token-expiration-ms: 900000       # 15 minutes
     refresh-token-expiration-ms: 604800000   # 7 days
   cors:

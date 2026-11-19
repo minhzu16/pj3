@@ -8,7 +8,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JwtServiceTest {
@@ -21,6 +23,19 @@ class JwtServiceTest {
         ReflectionTestUtils.setField(jwtService, "jwtSecret", "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970");
         ReflectionTestUtils.setField(jwtService, "accessTokenExpirationMs", 900000L);
         ReflectionTestUtils.setField(jwtService, "refreshTokenExpirationMs", 604800000L);
+    }
+
+    @Test
+    void validateSecret_refusesMissingOrShortSecrets() {
+        JwtService service = new JwtService();
+        ReflectionTestUtils.setField(service, "jwtSecret", null);
+        assertThrows(IllegalStateException.class, service::validateSecret);
+
+        // Previously a short secret was silently stretched with SHA-256 and accepted.
+        ReflectionTestUtils.setField(service, "jwtSecret", "too-short");
+        assertThrows(IllegalStateException.class, service::validateSecret);
+
+        assertDoesNotThrow(jwtService::validateSecret);
     }
 
     @Test

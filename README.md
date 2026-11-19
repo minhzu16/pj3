@@ -106,8 +106,9 @@ rtk docker compose up -d postgres
 Cơ sở dữ liệu sẽ lắng nghe tại `localhost:5432` với tài khoản `postgres` / `postgres`, database `expense_tracker`.
 
 ### 4.2. Khởi động Backend (Spring Boot 3)
-Chuyển vào thư mục `backend` và chạy Maven:
+Lần đầu: sao chép `.env.example` thành `backend/.env` và điền `JWT_SECRET` (≥ 32 ký tự). Backend **không khởi động** nếu thiếu. Sau đó chuyển vào thư mục `backend` và chạy Maven:
 ```bash
+cp .env.example backend/.env   # rồi điền JWT_SECRET
 cd backend
 rtk mvn spring-boot:run
 ```

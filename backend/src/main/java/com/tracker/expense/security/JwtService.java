@@ -5,14 +5,13 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -20,7 +19,10 @@ import java.util.UUID;
 @Service
 public class JwtService {
 
-    @Value("${app.jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    static final int MIN_SECRET_BYTES = 32;
+
+    // No default: startup fails when JWT_SECRET is not set (see .env.example).
+    @Value("${app.jwt.secret}")
     private String jwtSecret;
 
     @Getter
@@ -31,17 +33,17 @@ public class JwtService {
     @Value("${app.jwt.refresh-token-expiration-ms:604800000}")
     private long refreshTokenExpirationMs;
 
-    private SecretKey getSigningKey() {
-        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
-        if (keyBytes.length < 32) {
-            try {
-                MessageDigest md = MessageDigest.getInstance("SHA-256");
-                keyBytes = md.digest(keyBytes);
-            } catch (NoSuchAlgorithmException e) {
-                throw new IllegalStateException("SHA-256 algorithm unavailable", e);
-            }
+    /** Refuses to start with a missing or short secret instead of silently stretching it. */
+    @PostConstruct
+    void validateSecret() {
+        if (jwtSecret == null || jwtSecret.getBytes(StandardCharsets.UTF_8).length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException(
+                    "JWT_SECRET must be at least " + MIN_SECRET_BYTES + " bytes long (see .env.example)");
         }
-        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateAccessToken(UUID userId, String email) {
