@@ -1,5 +1,6 @@
 package com.tracker.expense.api;
 
+import com.tracker.expense.config.ClockConfig;
 import com.tracker.expense.config.SecurityConfig;
 import com.tracker.expense.security.CustomUserDetailsService;
 import com.tracker.expense.security.JwtAuthenticationEntryPoint;
@@ -18,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(HealthController.class)
-@Import({SecurityConfig.class, JwtAuthenticationEntryPoint.class, JwtAuthenticationFilter.class})
+@Import({SecurityConfig.class, JwtAuthenticationEntryPoint.class, JwtAuthenticationFilter.class, ClockConfig.class})
 class HealthControllerTest {
 
     @Autowired
