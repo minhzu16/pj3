@@ -47,34 +47,41 @@ class ShellScaffold extends StatelessWidget {
         ),
         child: SafeArea(
           top: false,
-          child: NavigationBar(
-            height: 64,
-            selectedIndex: selectedIndex,
-            onDestinationSelected: (idx) => _onItemTapped(idx, context),
-            backgroundColor: Colors.transparent,
-            indicatorColor: AppColors.primary.withValues(alpha: 0.15),
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.space_dashboard_outlined, color: AppColors.textSecondary, size: 22),
-                selectedIcon: Icon(Icons.space_dashboard_rounded, color: AppColors.primaryLight, size: 22),
-                label: 'Tổng quan',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.receipt_long_outlined, color: AppColors.textSecondary, size: 22),
-                selectedIcon: Icon(Icons.receipt_long_rounded, color: AppColors.primaryLight, size: 22),
-                label: 'Sổ giao dịch',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.account_balance_wallet_outlined, color: AppColors.textSecondary, size: 22),
-                selectedIcon: Icon(Icons.account_balance_wallet_rounded, color: AppColors.primaryLight, size: 22),
-                label: 'Ngân sách',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.insights_outlined, color: AppColors.textSecondary, size: 22),
-                selectedIcon: Icon(Icons.insights_rounded, color: AppColors.primaryLight, size: 22),
-                label: 'Phân tích',
-              ),
-            ],
+          child: Semantics(
+            label: 'Thanh điều hướng chính',
+            child: NavigationBar(
+              height: 64,
+              selectedIndex: selectedIndex,
+              onDestinationSelected: (idx) => _onItemTapped(idx, context),
+              backgroundColor: Colors.transparent,
+              indicatorColor: AppColors.primary.withValues(alpha: 0.15),
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.space_dashboard_outlined, color: AppColors.textSecondary, size: 22),
+                  selectedIcon: Icon(Icons.space_dashboard_rounded, color: AppColors.primaryLight, size: 22),
+                  label: 'Tổng quan',
+                  tooltip: 'Tổng quan tài chính',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.receipt_long_outlined, color: AppColors.textSecondary, size: 22),
+                  selectedIcon: Icon(Icons.receipt_long_rounded, color: AppColors.primaryLight, size: 22),
+                  label: 'Sổ giao dịch',
+                  tooltip: 'Danh sách sổ giao dịch',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.account_balance_wallet_outlined, color: AppColors.textSecondary, size: 22),
+                  selectedIcon: Icon(Icons.account_balance_wallet_rounded, color: AppColors.primaryLight, size: 22),
+                  label: 'Ngân sách',
+                  tooltip: 'Kế hoạch ngân sách chi tiêu',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.insights_outlined, color: AppColors.textSecondary, size: 22),
+                  selectedIcon: Icon(Icons.insights_rounded, color: AppColors.primaryLight, size: 22),
+                  label: 'Phân tích',
+                  tooltip: 'Báo cáo phân tích thu chi',
+                ),
+              ],
+            ),
           ),
         ),
       ),

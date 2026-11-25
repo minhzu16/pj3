@@ -30,3 +30,6 @@ frontend/pubspec.lock
 # Logs & temp
 *.log
 scratch/
+
+# Local agent tooling
+.agents/

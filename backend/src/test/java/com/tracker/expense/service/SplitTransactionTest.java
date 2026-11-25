@@ -4,7 +4,6 @@ import com.tracker.expense.common.exception.BadRequestException;
 import com.tracker.expense.common.exception.ResourceNotFoundException;
 import com.tracker.expense.dto.CreateSplitTransactionRequest;
 import com.tracker.expense.dto.CreateTransactionRequest;
-import com.tracker.expense.dto.PaymentMethodResponse;
 import com.tracker.expense.dto.SplitItemRequest;
 import com.tracker.expense.dto.SplitTransactionResponse;
 import com.tracker.expense.dto.TransactionResponse;
@@ -24,7 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

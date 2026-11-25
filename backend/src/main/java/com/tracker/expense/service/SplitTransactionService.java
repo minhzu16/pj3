@@ -9,7 +9,6 @@ import com.tracker.expense.dto.SplitItemRequest;
 import com.tracker.expense.dto.SplitTransactionResponse;
 import com.tracker.expense.dto.TransactionWithAlertsResponse;
 import com.tracker.expense.model.Category;
-import com.tracker.expense.model.PaymentMethod;
 import com.tracker.expense.repository.CategoryRepository;
 import com.tracker.expense.repository.PaymentMethodRepository;
 import lombok.RequiredArgsConstructor;

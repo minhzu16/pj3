@@ -7,6 +7,16 @@ on:
     branches: [ main, master ]
 
 jobs:
+  actionlint:
+    name: Workflow Lint (actionlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run actionlint
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint
+
   backend-test:
     name: Backend Tests & Build
     runs-on: ubuntu-latest
@@ -37,13 +47,30 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Run Backend Tests
+      - name: OWASP dependency check
         working-directory: backend
-        run: mvn clean test -B
+        run: mvn -B -q org.owasp:dependency-check-maven:12.2.2:check -DfailBuildOnCVSS=9 -DskipTestScope=true
+        continue-on-error: true
+
+      - name: Run Backend Tests, Checkstyle, Spotless & JaCoCo Check
+        working-directory: backend
+        run: mvn clean verify jacoco:report -B
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/expense_tracker
           SPRING_DATASOURCE_USERNAME: postgres
           SPRING_DATASOURCE_PASSWORD: postgrespassword
+
+      - name: Print & Publish JaCoCo Coverage Summary
+        if: always()
+        run: |
+          if [ -f backend/target/site/jacoco/jacoco.csv ]; then
+            awk -F',' 'NR>1 {
+              inst_m+=$4; inst_c+=$5; branch_m+=$6; branch_c+=$7; line_m+=$8; line_c+=$9
+            } END {
+              printf "JaCoCo Summary -> Instructions: %.2f%% | Branches: %.2f%% | Lines: %.2f%%\n",
+                (inst_c/(inst_m+inst_c))*100, (branch_c/(branch_m+branch_c))*100, (line_c/(line_m+line_c))*100
+            }' backend/target/site/jacoco/jacoco.csv | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Package JAR
         working-directory: backend
